@@ -1,0 +1,27 @@
+name: Build AirCard IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Download source
+        uses: actions/checkout@v4
+
+      - name: Build unsigned IPA
+        run: |
+          chmod +x build-ipa.sh
+          ./build-ipa.sh
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirCard-iOS-IPA
+          path: build/AirCard-iOS.ipa
+          retention-days: 7
