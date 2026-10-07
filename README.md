@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  Apple Wallet card skins, lock screen passcode themes, and PosterBoard wallpapers directly on iOS 27+.
+  Apple Wallet card skins, lock screen passcode themes, and PosterBoard wallpapers directly on iOS (18.0 – 27.2 beta 2).
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%2027+-blue?style=flat-square&logo=apple" alt="Platform" />
+  <img src="https://img.shields.io/badge/Platform-iOS%2018.0%E2%80%9327.2%20b2-blue?style=flat-square&logo=apple" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-5.0-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/Rust-FFI%20Core-red?style=flat-square&logo=rust" alt="Rust" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
@@ -22,7 +22,17 @@ AirCard-iOS customizes Apple Wallet card artwork, lock screen passcode dialers, 
 
 The app communicates with internal system services over a local loopback tunnel (`10.7.0.1` or `127.0.0.1`) provided by LocalDevVPN. File operations are handled by `AirliftFFI`, a Rust library that interfaces with the AirTraffic service.
 
-> **Compatibility**: AirCard-iOS currently requires **iOS 27.0 or newer (iOS 27+)**.
+## Compatibility
+
+| iOS Version | Status | Pairing Method | Features Supported |
+| :--- | :--- | :--- | :--- |
+| **iOS 27.0 – 27.0.1** | ✅ Supported | On-device Settings or imported pairing file | Wallet skins, Passcode themes, Tendies wallpapers |
+| **iOS 27.2 beta 1 – beta 2** | ✅ Supported | On-device Settings or imported pairing file | Tested and working |
+| **iOS 18.0 – 26.x** | ✅ Supported | Imported pairing file only | Wallet skins & Passcode themes (via SideStore / LiveContainer / AltStore pairing file) |
+| **iOS 27.2 beta 3+** | ❌ Patched | None | Apple patched the underlying `airlift` exploit. Does not work. |
+
+> [!IMPORTANT]
+> **Do not update past iOS 27.2 beta 2:** Apple patched the AirTraffic sync exploit in iOS 27.2 beta 3. If you update past beta 2, file injection will no longer work.
 
 ## Features
 
@@ -45,16 +55,52 @@ The app communicates with internal system services over a local loopback tunnel 
 - Injects wallpaper configurations and assets into PosterBoard storage.
 - Automatically triggers a NeoSpring respring after flashing to apply wallpapers without rebooting your iPhone.
 
-### On-device pairing
-- Advertises locally over Bonjour so the phone can pair with itself via Settings > Privacy & Security > Developer Mode > Pair with AirCard-iOS.
-- Reads and syncs pairing records automatically into `aircard_pairing.plist`.
-- Once paired, no computer or external connection is needed.
+### Pairing options
+- **Import pairing file**: Supports pairing files (`.mobiledevicepairing`, `.plist`, `.mobilepair`) from **SideStore**, **LiveContainer**, **iLoader**, **AltStore**, **Jitterbug**, or exported from Mac/PC.
+- **On-device pairing (iOS 27+)**: Advertises locally over Bonjour so the phone can pair with itself via Settings > Privacy & Security > Developer Mode > Pair with AirCard-iOS.
+- **Safe unpairing**: Easily delete the active pairing file to re-pair or switch pairing credentials at any time.
 
 ## Prerequisites
 
-1. **iOS 27+**: The exploit and paths currently target iOS 27.0 and above.
-2. **LocalDevVPN**: Running in loopback mode (`10.7.0.1` or `127.0.0.1`) so local connections can reach internal device services.
-3. **Developer Mode pairing**: Pair directly in Settings > Privacy & Security > Developer Mode > Pair with AirCard-iOS, or place an existing pairing plist in the app's documents directory.
+1. **iOS 18.0 – 27.2 beta 2** (iOS 27.0+ for on-device Settings pairing, or imported pairing file on iOS 18–26). Note: iOS 27.2 beta 3+ is patched.
+2. **LocalDevVPN / WireGuard**: Running in loopback mode (`10.7.0.1` or `127.0.0.1`) so local connections can reach internal device services.
+3. **Pairing record**: Either on-device pairing or an imported pairing file.
+
+## Pairing Setup Guide
+
+AirCard-iOS requires a pairing record to communicate with device lockdown services. Choose the method that best matches your setup:
+
+### Option A: SideStore (Recommended)
+If you already use SideStore on your device, it has already created a valid pairing file:
+1. Open **AirCard-iOS** and go to the **Pairing** tab.
+2. Tap **Import Pairing File…**.
+3. In the Files document picker, navigate to:
+   ```text
+   On My iPhone › SideStore › ALTPairingFile.mobiledevicepairing
+   ```
+4. Select `ALTPairingFile.mobiledevicepairing`. The app will load it immediately (`Pairing file loaded ✅`).
+
+### Option B: LiveContainer (with SideStore inside)
+If you run SideStore inside LiveContainer:
+1. Open **AirCard-iOS** › **Pairing** tab › tap **Import Pairing File…**.
+2. In the Files document picker, navigate to:
+   ```text
+   On My iPhone › LiveContainer › SideStore › Documents › ALTPairingFile.mobiledevicepairing
+   ```
+   *(depending on your LiveContainer version, you can also check `On My iPhone › LiveContainer › Data › App › ... › SideStore › Documents`)*
+3. Select `ALTPairingFile.mobiledevicepairing`.
+
+### Option C: iLoader / Jitterbug / AltStore / Computer
+- **iLoader / Jitterbug**: In the respective app, export your pairing file (`<UDID>.mobiledevicepairing`) into the Files app, then import it in AirCard-iOS.
+- **Mac / PC**: Generate a pairing record using `jitterbugpair`, `pymobiledevice3`, or copy it from your computer (`/var/db/lockdown/<UDID>.plist` on macOS or `%ProgramData%\Apple\Lockdown\<UDID>.plist` on Windows), AirDrop/transfer it to your device, and import it into AirCard-iOS.
+- **Manual placement**: You can also drop any `.mobiledevicepairing` or `.plist` directly into `On My iPhone › AirCard-iOS` via the Files app; it will appear under *Discovered in Documents* ready to use.
+
+### Option D: On-Device Pairing (iOS 27+ only)
+On devices running iOS 27 or newer:
+1. In the **Pairing** tab, tap **Pair This iPhone**.
+2. Note the 6-digit PIN displayed on screen.
+3. Open **Settings › Privacy & Security › Developer Mode › Pair with AirCard-iOS**.
+4. Enter the PIN to approve the pairing. AirCard-iOS will complete the handshake and save the credentials.
 
 ## Installation
 
@@ -122,11 +168,13 @@ AirCard-iOS/
 - **[NeoSpring](https://github.com/rooootdev/neospring)**: Swift implementation by **[@skadz108](https://github.com/skadz108)** and **[@rooootdev](https://github.com/rooootdev)**, and **[@neonmodder123](https://github.com/neonmodder123)** for the WebKit GPU process respring technique.
 - Built upon concepts from the **AirCard** project.
 
-## Support
+## Support & Donations
 
-If you want to support AirCard-iOS development:
+If you want to support AirCard-iOS development by **[@mak5er](https://github.com/mak5er)**:
 
-- **PayPal**: [Donate via PayPal](https://www.paypal.com/donate/?hosted_button_id=98QRTC2HFRA4Y)
+- **Twitter / X**: [@mak5er](https://x.com/mak5er)
+- **GitHub**: [@mak5er](https://github.com/mak5er)
+- **PayPal**: [Donate via PayPal (Maksym Reva)](https://www.paypal.com/donate/?hosted_button_id=98QRTC2HFRA4Y)
 - **TON**: `UQBm9KPhtMw-XVVjirUoa09wzrlyWsbeZhKfefl1Uw-qNZ-r`
 - **USDT (TRC20)**: `TDkDMCyjYxgvkWUnQiF5Erk2RyPQMT6G1n`
 - **USDT / BNB (BEP20)**: `0x0954dc491c502849d04956ef74634aa5931a08e8`
